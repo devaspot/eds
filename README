@@ -1,0 +1,14 @@
+To build this code, run the following command:
+
+erlc -o ebin src\*.erl
+
+To run the program, first start Erlang like this:
+
+erl -pa ebin
+
+Then, run the following in the Erlang shell:
+
+1> eds:start().
+
+After that, open LDAP client, Windows Mail e.g.
+to connect to the application, on 389 LDAP port.
