@@ -14,7 +14,7 @@ init(FileName) ->
 
 traverse(Fun) -> dets:traverse(disk,Fun).
 
-list() -> dets:traverse(disk,fun(C) -> io:format("~p~n",[C]),continue end).
+list() -> ets:foldl(fun(C,Acc) -> io:format("~p~n",[C]) end,none,ram).
 
 done() ->
 	case ets:info(ram) of
