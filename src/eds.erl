@@ -3,6 +3,7 @@
 -export([start/0]).                                                              
 -compile(export_all).
 -include("LDAP.hrl").
+-include("roster.hrl").
 -define(TCP_OPTIONS, [binary, {packet, 0}, {active, false}, {reuseaddr, true}]).
 
 start() ->
@@ -43,6 +44,7 @@ message(No,Message,Socket) ->
 	end.
 
 bind(No,Uid,Auth,Socket) ->
+	roster:init(Uid),
 	Response = #'BindResponse'{resultCode = success, matchedDN = Uid, diagnosticMessage = "OK"},
 	answer(Response,No,bindResponse,Socket).
 
@@ -53,22 +55,16 @@ answer(Response,No,ProtocolOp,Socket) ->
 	gen_tcp:send(Socket, list_to_binary(Bytes)).
 
 search(No,SearchDN,Scope,Deref,SizeLimit,TimeLimit,TypesOnly,Filter,Attributes,Socket) ->
-	CN = #'PartialAttribute'{type = "cn", vals = ["Oleg Smirnov"]},
-	Email = #'PartialAttribute'{type = "mail", vals = ["oleg.smirnov@gmail.com"]},
-	Response = #'SearchResultEntry'{
-		objectName = "cn=Oleg Smirnov,ou=Contacts,uid=mes,ou=People,dc=eba,dc=li",
-		attributes = [CN,Email]
-	},
-	answer(Response,No,searchResEntry,Socket),
-	CN2 = #'PartialAttribute'{type = "cn", vals = ["Maxim Sokhatsky"]},
-	Email2 = #'PartialAttribute'{type = "mail", vals = ["maxim.sokhatsky@gmail.com"]},
-	Response2 = #'SearchResultEntry'{
-		objectName = "cn=Maxim Sokhatsky,ou=Contacts,uid=mes,ou=People,dc=eba,dc=li",
-		attributes = [CN2,Email2]
-	},
-	answer(Response2,No,searchResEntry,Socket),
+	roster:traverse(fun({'ContactRecord',CommonName,GivenName,Mail}) -> 
+		CN = {'PartialAttribute', "cn", [CommonName]},
+		MAIL = {'PartialAttribute', "mail", [Mail]},
+		Response = {'SearchResultEntry', CommonName, [CN,MAIL]},
+		answer(Response,No,searchResEntry,Socket),
+		continue
+	end),
 	Done = #'LDAPResult'{resultCode = success, matchedDN = SearchDN, diagnosticMessage = "OK"},
 	answer(Done,No,searchResDone,Socket).
 
 abandon(No,Socket) ->
+	roster:done(),
 	gen_tcp:close(Socket).

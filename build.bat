@@ -1,1 +1,1 @@
-erlc +debug_info -o ebin src\LDAP.erl src\eds.erl
+erlc +debug_info -o ebin src\LDAP.erl src\eds.erl src\roster.erl
