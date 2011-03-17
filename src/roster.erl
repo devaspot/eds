@@ -1,6 +1,5 @@
 -module(roster).
 -include("roster.hrl").
--include_lib("stdlib/include/qlc.hrl").
 -compile(export_all).
 -export([init/1,done/0,put/3,get/1,traverse/1]).
 

@@ -22,6 +22,7 @@ loop(Socket) ->
 	case gen_tcp:recv(Socket, 0) of
 		{ok, Data} ->
 			Decoded = asn1rt:decode('LDAP','LDAPMessage',Data),
+			io:format("Decoded: ~p~n",[Decoded]),
 			case Decoded of
 				{ok,{'LDAPMessage',No,Message,Asn}} -> message(No,Message,Socket);
 				_Else -> noLDAP
@@ -32,15 +33,15 @@ loop(Socket) ->
 	end.
 
 message(No,Message,Socket) ->
-	io:format("messageID: ~p~n",[No]),
-	io:format("~p~n",[Message]),
 	case Message of
 		{bindRequest, {'BindRequest',Type,Uid,Auth}} -> bind(No,Uid,Auth,Socket);
 		{abandonRequest,Type} -> abandon(No,Socket);
 		{unbindRequest, Null} -> abandon(0,Socket);
 		{searchRequest,	{'SearchRequest',SearchDN,Scope,Deref,SizeLimit,
 			TimeLimit,TypesOnly,Filter,Attributes}} -> search(No, SearchDN, Scope,Deref,SizeLimit,
-			TimeLimit,TypesOnly, Filter,Attributes,Socket)
+			TimeLimit,TypesOnly, Filter,Attributes,Socket);
+		_Else -> 
+			io:format("~p~n",[Message])
 	end.
 
 bind(No,Uid,Auth,Socket) ->
