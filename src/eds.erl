@@ -7,11 +7,11 @@
 -define(TCP_OPTIONS, [binary, {packet, 0}, {active, false}, {reuseaddr, true}]).
 
 start() ->
-	listen(389).
+	listen(1389).
 
 listen(Port) ->
 	{ok, LSocket} = gen_tcp:listen(Port, ?TCP_OPTIONS),
-	accept(LSocket).
+	spawn(eds,accept,[LSocket]).
 	                                     
 accept(LSocket) ->
 	{ok, Socket} = gen_tcp:accept(LSocket),
@@ -28,7 +28,7 @@ loop(Socket) ->
 				_Else -> noLDAP
 			end,
 			loop(Socket);
-		{error, closed} ->
+		E -> io:format("Error: ~p~n",[E]),
 			ok
 	end.
 
@@ -41,10 +41,12 @@ message(No,Message,Socket) ->
 			TimeLimit,TypesOnly,Filter,Attributes}} -> search(No, SearchDN, Scope,Deref,SizeLimit,
 			TimeLimit,TypesOnly, Filter,Attributes,Socket);
 		_Else -> 
-			io:format("~p~n",[Message])
+			io:format("Unknown: ~p~n",[Message])
 	end.
 
-bind(No,Uid,Auth,Socket) ->
+bind(No,Uid2,Auth,Socket) ->
+        io:format("UID: ~p", [Uid2]),
+        Uid = case Uid2 of [] -> "maxim"; A -> A end,
 	roster:init(Uid),
 	Response = #'BindResponse'{resultCode = success, matchedDN = Uid, diagnosticMessage = "OK"},
 	answer(Response,No,bindResponse,Socket).
@@ -67,5 +69,6 @@ search(No,SearchDN,Scope,Deref,SizeLimit,TimeLimit,TypesOnly,Filter,Attributes,S
 	answer(Done,No,searchResDone,Socket).
 
 abandon(No,Socket) ->
-	roster:done(),
-	gen_tcp:close(Socket).
+        io:format("Abandon: ~p~n",[{No,Socket}]),
+	roster:done(), ok.
+%	gen_tcp:close(Socket).
